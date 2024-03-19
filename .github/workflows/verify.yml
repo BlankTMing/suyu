@@ -4,8 +4,8 @@
 name: 'yuzu verify'
 
 on:
-  pull_request:
-    branches: [ master ]
+  workflow_dispatch:
+    
 env:
   PR_NUMBER: pr${{ github.event.number }}
   
