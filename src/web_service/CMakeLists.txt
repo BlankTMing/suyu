@@ -5,8 +5,6 @@ add_library(web_service STATIC
     announce_room_json.cpp
     announce_room_json.h
     precompiled_headers.h
-    telemetry_json.cpp
-    telemetry_json.h
     verify_login.cpp
     verify_login.h
     verify_user_jwt.cpp
@@ -19,6 +17,6 @@ add_library(web_service STATIC
 create_target_directory_groups(web_service)
 target_link_libraries(web_service PRIVATE common network nlohmann_json::nlohmann_json httplib::httplib cpp-jwt::cpp-jwt)
 
-if (YUZU_USE_PRECOMPILED_HEADERS)
+if (SUYU_USE_PRECOMPILED_HEADERS)
     target_precompile_headers(web_service PRIVATE precompiled_headers.h)
 endif()

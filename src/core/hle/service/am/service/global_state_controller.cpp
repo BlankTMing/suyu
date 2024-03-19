@@ -14,9 +14,9 @@ IGlobalStateController::IGlobalStateController(Core::System& system_)
     static const FunctionInfo functions[] = {
         {0, nullptr, "RequestToEnterSleep"},
         {1, nullptr, "EnterSleep"},
-        {2, nullptr, "StartSleepSequence"},
-        {3, nullptr, "StartShutdownSequence"},
-        {4, nullptr, "StartRebootSequence"},
+        {2, D<&IGlobalStateController::StartSleepSequence>, "StartSleepSequence"},
+        {3, D<&IGlobalStateController::StartShutdownSequence>, "StartShutdownSequence"},
+        {4, D<&IGlobalStateController::StartRebootSequence>, "StartRebootSequence"},
         {9, nullptr, "IsAutoPowerDownRequested"},
         {10, D<&IGlobalStateController::LoadAndApplyIdlePolicySettings>, "LoadAndApplyIdlePolicySettings"},
         {11, nullptr, "NotifyCecSettingsChanged"},
@@ -32,6 +32,23 @@ IGlobalStateController::IGlobalStateController(Core::System& system_)
 }
 
 IGlobalStateController::~IGlobalStateController() = default;
+
+Result IGlobalStateController::StartSleepSequence(u8 a) {
+    LOG_WARNING(Service_AM, "(STUBBED) called, a={}", a);
+    R_SUCCEED();
+}
+
+Result IGlobalStateController::StartShutdownSequence() {
+    LOG_INFO(Service_AM, "called");
+    system.Exit();
+    R_SUCCEED();
+}
+
+Result IGlobalStateController::StartRebootSequence() {
+    LOG_INFO(Service_AM, "called");
+    system.Exit();
+    R_SUCCEED();
+}
 
 Result IGlobalStateController::LoadAndApplyIdlePolicySettings() {
     LOG_WARNING(Service_AM, "(STUBBED) called");

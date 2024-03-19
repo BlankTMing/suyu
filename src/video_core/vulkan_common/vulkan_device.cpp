@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project
+// SPDX-FileCopyrightText: Copyright 2018 yuzu Emulator Project & 2024 suyu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
@@ -37,6 +37,12 @@ constexpr std::array STENCIL8_UINT{
 constexpr std::array DEPTH24_UNORM_STENCIL8_UINT{
     VK_FORMAT_D32_SFLOAT_S8_UINT,
     VK_FORMAT_D16_UNORM_S8_UINT,
+    VK_FORMAT_UNDEFINED,
+};
+
+constexpr std::array DEPTH24_UNORM_DONTCARE8{
+    VK_FORMAT_D32_SFLOAT,
+    VK_FORMAT_D16_UNORM,
     VK_FORMAT_UNDEFINED,
 };
 
@@ -95,6 +101,8 @@ constexpr const VkFormat* GetFormatAlternatives(VkFormat format) {
         return Alternatives::STENCIL8_UINT.data();
     case VK_FORMAT_D24_UNORM_S8_UINT:
         return Alternatives::DEPTH24_UNORM_STENCIL8_UINT.data();
+    case VK_FORMAT_X8_D24_UNORM_PACK32:
+        return Alternatives::DEPTH24_UNORM_DONTCARE8.data();
     case VK_FORMAT_D16_UNORM_S8_UINT:
         return Alternatives::DEPTH16_UNORM_STENCIL8_UINT.data();
     case VK_FORMAT_B5G6R5_UNORM_PACK16:
@@ -572,6 +580,7 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
                                    VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
         }
     }
+    // Mesa RadV drivers still have broken extendedDynamicState3ColorBlendEquation support.
     if (extensions.extended_dynamic_state3 && is_radv) {
         LOG_WARNING(Render_Vulkan, "RADV has broken extendedDynamicState3ColorBlendEquation");
         features.extended_dynamic_state3.extendedDynamicState3ColorBlendEnable = false;
@@ -586,6 +595,8 @@ Device::Device(VkInstance instance_, vk::PhysicalDevice physical_, VkSurfaceKHR 
             dynamic_state3_enables = false;
         }
     }
+    // AMD still has broken extendedDynamicState3ColorBlendEquation on RDNA3.
+    // TODO: distinguis RDNA3 from other uArchs.
     if (extensions.extended_dynamic_state3 && is_amd_driver) {
         LOG_WARNING(Render_Vulkan,
                     "AMD drivers have broken extendedDynamicState3ColorBlendEquation");
@@ -1353,6 +1364,7 @@ void Device::CollectToolingInfo() {
         LOG_INFO(Render_Vulkan, "Attached debugging tool: {}", name);
         has_renderdoc = has_renderdoc || name == "RenderDoc";
         has_nsight_graphics = has_nsight_graphics || name == "NVIDIA Nsight Graphics";
+        has_radeon_gpu_profiler = has_radeon_gpu_profiler || name == "Radeon GPU Profiler";
     }
 }
 

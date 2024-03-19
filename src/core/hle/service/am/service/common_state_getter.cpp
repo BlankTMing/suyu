@@ -38,7 +38,7 @@ ICommonStateGetter::ICommonStateGetter(Core::System& system_, std::shared_ptr<Ap
         {30, nullptr, "GetHomeButtonReaderLockAccessor"},
         {31, D<&ICommonStateGetter::GetReaderLockAccessorEx>, "GetReaderLockAccessorEx"},
         {32, D<&ICommonStateGetter::GetWriterLockAccessorEx>, "GetWriterLockAccessorEx"},
-        {40, nullptr, "GetCradleFwVersion"},
+        {40, D<&ICommonStateGetter::GetCradleFwVersion>, "GetCradleFwVersion"},
         {50, D<&ICommonStateGetter::IsVrModeEnabled>, "IsVrModeEnabled"},
         {51, D<&ICommonStateGetter::SetVrModeEnabled>, "SetVrModeEnabled"},
         {52, D<&ICommonStateGetter::SetLcdBacklighOffEnabled>, "SetLcdBacklighOffEnabled"},
@@ -80,15 +80,14 @@ ICommonStateGetter::~ICommonStateGetter() = default;
 
 Result ICommonStateGetter::GetEventHandle(OutCopyHandle<Kernel::KReadableEvent> out_event) {
     LOG_DEBUG(Service_AM, "called");
-    *out_event = &m_applet->message_queue.GetMessageReceiveEvent();
+    *out_event = m_applet->lifecycle_manager.GetSystemEvent().GetHandle();
     R_SUCCEED();
 }
 
 Result ICommonStateGetter::ReceiveMessage(Out<AppletMessage> out_applet_message) {
     LOG_DEBUG(Service_AM, "called");
 
-    *out_applet_message = m_applet->message_queue.PopMessage();
-    if (*out_applet_message == AppletMessage::None) {
+    if (!m_applet->lifecycle_manager.PopMessage(out_applet_message)) {
         LOG_ERROR(Service_AM, "Tried to pop message but none was available!");
         R_THROW(AM::ResultNoMessages);
     }
@@ -100,7 +99,7 @@ Result ICommonStateGetter::GetCurrentFocusState(Out<FocusState> out_focus_state)
     LOG_DEBUG(Service_AM, "called");
 
     std::scoped_lock lk{m_applet->lock};
-    *out_focus_state = m_applet->focus_state;
+    *out_focus_state = m_applet->lifecycle_manager.GetAndClearFocusState();
 
     R_SUCCEED();
 }
@@ -137,7 +136,7 @@ Result ICommonStateGetter::GetWriterLockAccessorEx(
 Result ICommonStateGetter::GetDefaultDisplayResolutionChangeEvent(
     OutCopyHandle<Kernel::KReadableEvent> out_event) {
     LOG_DEBUG(Service_AM, "called");
-    *out_event = &m_applet->message_queue.GetOperationModeChangedEvent();
+    *out_event = m_applet->lifecycle_manager.GetOperationModeChangedSystemEvent().GetHandle();
     R_SUCCEED();
 }
 
@@ -157,6 +156,17 @@ Result ICommonStateGetter::GetPerformanceMode(Out<APM::PerformanceMode> out_perf
 Result ICommonStateGetter::GetBootMode(Out<PM::SystemBootMode> out_boot_mode) {
     LOG_DEBUG(Service_AM, "called");
     *out_boot_mode = Service::PM::SystemBootMode::Normal;
+    R_SUCCEED();
+}
+
+Result ICommonStateGetter::GetCradleFwVersion(OutArray<uint32_t, 4> out_version) {
+    LOG_DEBUG(Service_AM, "(STUBBED) called");
+
+    out_version[0] = 0;
+    out_version[1] = 0;
+    out_version[2] = 0;
+    out_version[3] = 0;
+
     R_SUCCEED();
 }
 

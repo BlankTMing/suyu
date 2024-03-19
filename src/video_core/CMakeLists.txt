@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2018 yuzu Emulator Project
+# SPDX-FileCopyrightText: 2018 yuzu Emulator Project & 2024 suyu Emulator Project
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 add_subdirectory(host_shaders)
@@ -9,7 +9,7 @@ if(LIBVA_FOUND)
     list(APPEND FFmpeg_LIBRARIES ${LIBVA_LIBRARIES})
 endif()
 
-add_library(video_core STATIC
+set(sources
     buffer_cache/buffer_base.h
     buffer_cache/buffer_cache_base.h
     buffer_cache/buffer_cache.cpp
@@ -60,8 +60,8 @@ add_library(video_core STATIC
     framebuffer_config.h
     fsr.cpp
     fsr.h
-    host1x/codecs/codec.cpp
-    host1x/codecs/codec.h
+    host1x/codecs/decoder.cpp
+    host1x/codecs/decoder.h
     host1x/codecs/h264.cpp
     host1x/codecs/h264.h
     host1x/codecs/vp8.cpp
@@ -80,8 +80,6 @@ add_library(video_core STATIC
     host1x/nvdec.cpp
     host1x/nvdec.h
     host1x/nvdec_common.h
-    host1x/sync_manager.cpp
-    host1x/sync_manager.h
     host1x/syncpoint_manager.cpp
     host1x/syncpoint_manager.h
     host1x/vic.cpp
@@ -317,10 +315,71 @@ add_library(video_core STATIC
     vulkan_common/vulkan.h
 )
 
+if (APPLE)
+    list(REMOVE_ITEM sources
+        renderer_opengl/present/filters.cpp
+        renderer_opengl/present/filters.h
+        renderer_opengl/present/fsr.cpp
+        renderer_opengl/present/fsr.h
+        renderer_opengl/present/fxaa.cpp
+        renderer_opengl/present/fxaa.h
+        renderer_opengl/present/layer.cpp
+        renderer_opengl/present/layer.h
+        renderer_opengl/present/present_uniforms.h
+        renderer_opengl/present/smaa.cpp
+        renderer_opengl/present/smaa.h
+        renderer_opengl/present/util.h
+        renderer_opengl/present/window_adapt_pass.cpp
+        renderer_opengl/present/window_adapt_pass.h
+        renderer_opengl/blit_image.cpp
+        renderer_opengl/blit_image.h
+        renderer_opengl/gl_blit_screen.cpp
+        renderer_opengl/gl_blit_screen.h
+        renderer_opengl/gl_buffer_cache_base.cpp
+        renderer_opengl/gl_buffer_cache.cpp
+        renderer_opengl/gl_buffer_cache.h
+        renderer_opengl/gl_compute_pipeline.cpp
+        renderer_opengl/gl_compute_pipeline.h
+        renderer_opengl/gl_device.cpp
+        renderer_opengl/gl_device.h
+        renderer_opengl/gl_fence_manager.cpp
+        renderer_opengl/gl_fence_manager.h
+        renderer_opengl/gl_graphics_pipeline.cpp
+        renderer_opengl/gl_graphics_pipeline.h
+        renderer_opengl/gl_rasterizer.cpp
+        renderer_opengl/gl_rasterizer.h
+        renderer_opengl/gl_resource_manager.cpp
+        renderer_opengl/gl_resource_manager.h
+        renderer_opengl/gl_shader_cache.cpp
+        renderer_opengl/gl_shader_cache.h
+        renderer_opengl/gl_shader_manager.cpp
+        renderer_opengl/gl_shader_manager.h
+        renderer_opengl/gl_shader_context.h
+        renderer_opengl/gl_shader_util.cpp
+        renderer_opengl/gl_shader_util.h
+        renderer_opengl/gl_state_tracker.cpp
+        renderer_opengl/gl_state_tracker.h
+        renderer_opengl/gl_staging_buffer_pool.cpp
+        renderer_opengl/gl_staging_buffer_pool.h
+        renderer_opengl/gl_texture_cache.cpp
+        renderer_opengl/gl_texture_cache.h
+        renderer_opengl/gl_texture_cache_base.cpp
+        renderer_opengl/gl_query_cache.cpp
+        renderer_opengl/gl_query_cache.h
+        renderer_opengl/maxwell_to_gl.h
+        renderer_opengl/renderer_opengl.cpp
+        renderer_opengl/renderer_opengl.h
+        renderer_opengl/util_shaders.cpp
+        renderer_opengl/util_shaders.h
+    )
+endif()
+
+add_library(video_core STATIC ${sources})
+
 target_link_libraries(video_core PUBLIC common core)
 target_link_libraries(video_core PUBLIC glad shader_recompiler stb bc_decoder)
 
-if (YUZU_USE_BUNDLED_FFMPEG AND NOT (WIN32 OR ANDROID))
+if (SUYU_USE_BUNDLED_FFMPEG AND NOT (WIN32 OR ANDROID))
     add_dependencies(video_core ffmpeg-build)
 endif()
 
@@ -349,7 +408,7 @@ if (MSVC)
         /we4244 # 'conversion': conversion from 'type1' to 'type2', possible loss of data
     )
 else()
-    if (APPLE)
+    if (APPLE OR ARCHITECTURE_arm64)
         # error: declaration shadows a typedef in 'interval_base_set<SubType, DomainT, Compare, Interval, Alloc>'
         # error: implicit conversion loses integer precision: 'int' to 'boost::icl::bound_type' (aka 'unsigned char')
         target_compile_options(video_core PRIVATE -Wno-shadow -Wno-unused-local-typedef)
@@ -374,22 +433,30 @@ if (ARCHITECTURE_x86_64)
         macro/macro_jit_x64.h
     )
     target_link_libraries(video_core PUBLIC xbyak::xbyak)
+
+    if (NOT MSVC)
+        target_compile_options(video_core PRIVATE -msse4.1)
+    endif()
 endif()
 
 if (ARCHITECTURE_x86_64 OR ARCHITECTURE_arm64)
     target_link_libraries(video_core PRIVATE dynarmic::dynarmic)
 endif()
 
-if (YUZU_USE_PRECOMPILED_HEADERS)
+if (SUYU_USE_PRECOMPILED_HEADERS)
     target_precompile_headers(video_core PRIVATE precompiled_headers.h)
 endif()
 
-if (YUZU_ENABLE_LTO)
+if (SUYU_ENABLE_LTO)
   set_property(TARGET video_core PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 if (ANDROID AND ARCHITECTURE_arm64)
     target_link_libraries(video_core PRIVATE adrenotools)
+endif()
+
+if (ARCHITECTURE_arm64)
+    target_link_libraries(video_core PRIVATE sse2neon)
 endif()
 
 create_target_directory_groups(video_core)

@@ -1,5 +1,7 @@
-// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project
+// SPDX-FileCopyrightText: Copyright 2021 yuzu Emulator Project & 2024 suyu Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
+
+// Modified by palfaiate on <2024/03/07>
 
 #pragma once
 
@@ -471,7 +473,7 @@ struct Values {
         linkage, 0,    "rng_seed",       Category::System, Specialization::Hex,
         true,    true, &rng_seed_enabled};
     Setting<std::string> device_name{
-        linkage, "yuzu", "device_name", Category::System, Specialization::Default, true, true};
+        linkage, "suyu", "device_name", Category::System, Specialization::Default, true, true};
 
     Setting<s32> current_user{linkage, 0, "current_user", Category::System};
 
@@ -528,9 +530,9 @@ struct Values {
     Setting<bool> mouse_enabled{linkage, false, "mouse_enabled", Category::Controls};
 
     Setting<u8, true> mouse_panning_x_sensitivity{
-        linkage, 50, 1, 100, "mouse_panning_x_sensitivity", Category::Controls};
+        linkage, 50, 1, 200, "mouse_panning_x_sensitivity", Category::Controls};
     Setting<u8, true> mouse_panning_y_sensitivity{
-        linkage, 50, 1, 100, "mouse_panning_y_sensitivity", Category::Controls};
+        linkage, 50, 1, 200, "mouse_panning_y_sensitivity", Category::Controls};
     Setting<u8, true> mouse_panning_deadzone_counterweight{
         linkage, 20, 0, 100, "mouse_panning_deadzone_counterweight", Category::Controls};
     Setting<u8, true> mouse_panning_decay_strength{
@@ -609,12 +611,11 @@ struct Values {
                                            Category::Network};
 
     // WebService
-    Setting<bool> enable_telemetry{linkage, true, "enable_telemetry", Category::WebService};
-    Setting<std::string> web_api_url{linkage, "https://api.yuzu-emu.org", "web_api_url",
+    Setting<std::string> web_api_url{linkage, "http://74.113.97.71:3000", "web_api_url",
                                      Category::WebService};
-    Setting<std::string> yuzu_username{linkage, std::string(), "yuzu_username",
+    Setting<std::string> suyu_username{linkage, std::string(), "suyu_username",
                                        Category::WebService};
-    Setting<std::string> yuzu_token{linkage, std::string(), "yuzu_token", Category::WebService};
+    Setting<std::string> suyu_token{linkage, std::string(), "suyu_token", Category::WebService};
 
     // Add-Ons
     std::map<u64, std::vector<std::string>> disabled_addons;
